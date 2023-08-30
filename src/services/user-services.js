@@ -22,14 +22,7 @@ async function createUser(data){
     }
 }
 
-// async function getCities(){
-//     try {
-//         const cities = await cityRespository.getAll();
-//         return cities;
-//     } catch (error) {
-//         throw new AppError('Cannot fetch data of all the cities', StatusCodes.INTERNAL_SERVER_ERROR);
-//     }
-// }
+
 
 async function signin(data){
     try {
@@ -54,44 +47,37 @@ async function signin(data){
     }
 }
 
-// async function destroyCity(id){
-//     try {
-//         const response = await cityRespository.destroy(id);
-//         return response;
-//     } catch (error) {
-//         console.log(error);
-//         if(error.statusCode == StatusCodes.NOT_FOUND) {
-//             throw new AppError('The city you requested to delete is not present', error.statusCode);
-//         }
-//         throw new AppError('Cannot fetch data of  the city', StatusCodes.INTERNAL_SERVER_ERROR);
-//     }
-// }
 
-// async function updateCity(id, data){
-//     try {
-//         const city = await cityRespository.update(id, data);
-//         return city;
-//     } catch (error) {
-//         if(error.statusCode == StatusCodes.NOT_FOUND) {
-//             throw new AppError('The city you requested to update is not present', error.statusCode);
-//         }
-//         if(error.name == 'SequelizeValidationError' || error.name == 'SequelizeUniqueConstraintError'){
-//             let explanation = [];
-//             error.errors.forEach( (err) => {
-//                 explanation.push(err.message);
-//             });
-//             throw new AppError(explanation, StatusCodes.BAD_REQUEST);
-//         }
-//         throw new AppError('Cannot update the data of the city', StatusCodes.INTERNAL_SERVER_ERROR);
-//     }
-// }
+async function isAuthenicated(token){
+    try {
+        if(!token){
+            throw new AppError('Missing JWT token', StatusCodes.BAD_REQUEST);
+        }
+
+        const response = Auth.verifyToken(token);
+        const user = await userRespository.get(response.id);
+       
+        if(!user) {
+            throw new AppError('No user found', StatusCodes.NOT_FOUND);
+        }
+        return user.id;
+    } catch (error) {
+        if(error instanceof AppError) throw error;
+        if(error.name == 'JsonWebTokenError') {
+            throw new AppError('Invalid JWT token', StatusCodes.BAD_REQUEST);
+        }
+        if(error.name == 'TokenExpiredError') {
+            throw new AppError('JWT token expired', StatusCodes.BAD_REQUEST);
+        }
+        console.log(error);
+        throw new AppError('Something went wrong', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+}
+
 
 
 module.exports = {
     createUser,
     signin,
-    // getCities,
-    // getCity,
-    // destroyCity,
-    // updateCity
+    isAuthenicated,
 }
