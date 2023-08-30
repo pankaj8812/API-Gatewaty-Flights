@@ -2,7 +2,7 @@ const { StatusCodes } = require('http-status-codes');
 
 const { UserRespository } = require("../repositories");
 const AppError = require("../utils/errors/app-error");
-
+const {Auth} = require("../utils/common")
 const userRespository = new UserRespository();
 
 async function createUser(data){
@@ -31,17 +31,28 @@ async function createUser(data){
 //     }
 // }
 
-// async function getCity(id){
-//     try {
-//         const city = await cityRespository.get(id);
-//         return city;
-//     } catch (error) {
-//         if(error.statusCode == StatusCodes.NOT_FOUND) {
-//             throw new AppError('The city you requested is not present', error.statusCode);
-//         }
-//         throw new AppError('Cannot fetch data of the city', StatusCodes.INTERNAL_SERVER_ERROR);
-//     }
-// }
+async function signin(data){
+    try {
+        const user = await userRespository.getUserByEmail(data.email);
+        console.log("USer :",user)
+        if(!user) {
+            throw new AppError('No user found for the given email', StatusCodes.NOT_FOUND);
+        }
+
+        const passwordMatch = Auth.checkPassword(data.password, user.password);
+
+        if(!passwordMatch){
+            throw new AppError('Invalid password', StatusCodes.BAD_REQUEST);
+        }
+
+        const jwt = Auth.createToken({id: user.id, email: user.email});
+        return jwt;
+    } catch (error) {
+        if(error instanceof AppError) throw error;
+        console.log(error);
+        throw new AppError('Something went wrong', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+}
 
 // async function destroyCity(id){
 //     try {
@@ -78,6 +89,7 @@ async function createUser(data){
 
 module.exports = {
     createUser,
+    signin,
     // getCities,
     // getCity,
     // destroyCity,
