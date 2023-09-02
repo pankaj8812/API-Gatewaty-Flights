@@ -1,13 +1,17 @@
 const { StatusCodes } = require('http-status-codes');
 
-const { UserRespository } = require("../repositories");
+const { UserRepository, RoleRepository } = require("../repositories");
 const AppError = require("../utils/errors/app-error");
-const {Auth} = require("../utils/common")
-const userRespository = new UserRespository();
+const {Auth, Enums} = require("../utils/common");
+
+const userRepository = new UserRepository();
+const roleRepository = new RoleRepository();
 
 async function createUser(data){
     try{
-        const user = await userRespository.create(data);
+        const user = await userRepository.create(data);
+        const role = await roleRepository.getRoleByName(Enums.USER_ROLES_ENUMS.CUSTOMER);
+        user.addRole(role);
         return user;
     }catch(error){
         console.log(error);
@@ -26,7 +30,7 @@ async function createUser(data){
 
 async function signin(data){
     try {
-        const user = await userRespository.getUserByEmail(data.email);
+        const user = await userRepository.getUserByEmail(data.email);
         console.log("USer :",user)
         if(!user) {
             throw new AppError('No user found for the given email', StatusCodes.NOT_FOUND);
@@ -55,7 +59,7 @@ async function isAuthenicated(token){
         }
 
         const response = Auth.verifyToken(token);
-        const user = await userRespository.get(response.id);
+        const user = await userRepository.get(response.id);
        
         if(!user) {
             throw new AppError('No user found', StatusCodes.NOT_FOUND);
