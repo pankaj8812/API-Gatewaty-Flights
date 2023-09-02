@@ -78,10 +78,53 @@ async function isAuthenicated(token){
     }
 }
 
+async function addRoleToUser(data){
+    try {
+        const user = await userRepository.get(data.userId);
+        if(!user){
+            throw new AppError('No user found for the given id', StatusCodes.NOT_FOUND);
+        }
+        // console.log("User inside service: ",user);
+        const adminRole = await roleRepository.getRoleByName(data.role);
+        if(!adminRole) {
+            throw new AppError('The given role doesnot match with database roles', StatusCodes.NOT_FOUND);
+        }
+        // console.log("User inside role: ",adminRole)
+        user.addRole(adminRole);
+        return user.getRole();
+    } catch (error) {
+        if(error instanceof AppError) throw error;
+        console.log(error);
+        throw new AppError('Something went wrong', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+}
 
+
+async function isAdmin(id){
+    try {
+        const user = await userRepository.get(id);
+        // console.log("Response from isAdmin service :", user);
+        if(!user){
+            throw new AppError('No user found for the given id', StatusCodes.NOT_FOUND);
+        }
+        const adminRole = await roleRepository.getRoleByName('admin');
+        // console.log("adminRole from isAdmin service:", adminRole);
+        if(!adminRole) {
+            throw new AppError('No user found for the given role', StatusCodes.NOT_FOUND);
+        }
+
+        return user.hasRole(adminRole);
+    } catch (error) {
+        if(error instanceof AppError) throw error;
+        console.log(error);
+        throw new AppError('Something went wrong', StatusCodes.INTERNAL_SERVER_ERROR);
+    }
+}
 
 module.exports = {
     createUser,
     signin,
     isAuthenicated,
+    isAdmin,
+    addRoleToUser,
 }
